@@ -1,0 +1,157 @@
+---
+title: "Notes on SQL"
+output: html_notebook
+---
+## Entity relationship diagrams
+The "crow's foot" that connects the tables together shows us how the columns in one table relate to the columns in another table. 
+![](ERD.png)
+## Types Of Statements
+ A few statements include:
+* CREATE TABLE is a statement that creates a new table in a database.
+* DROP TABLE is a statement that removes a table in a database.
+* SELECT allows you to read data and display it. This is called a query.
+
+## SELECT & FROM Statements
+Here you were introduced to two statements that will be used in every query you write
+* SELECT - what columns you want back.
+* FROM - what table you are querying from. 
+```{sql}
+SELECT id, account_id, occurred_at
+FROM orders;
+```
+
+## LIMIT Statement
+ The LIMIT statement is useful when you want to see just the first few rows of a table. This can be much faster for loading than if we load the entire dataset.
+The LIMIT command is always the very last part of a query. An example of showing just the first 10 rows of the orders table with all of the columns might look like the following:
+```{sql}
+SELECT *
+FROM orders
+LIMIT 10
+```
+
+## ORDER BY Statement
+* The ORDER BY statement allows us to order our table by any row. 
+* Remember DESC can be added after the column in your ORDER BY statement to sort in descending order, as the default is to sort in ascending order.
+```{sql}
+SELECT id, occurred_at, total_amt_usd
+FROM orders
+ORDER BY occurred_at
+LIMIT 10;
+```
+
+We can ORDER BY more than one column at a time. The statement sorts according to columns listed from left first and those listed on the right after that.
+```{sql}
+SELECT *
+FROM orders
+ORDER BY occurred_at, total_amt_usd
+LIMIT 10;
+```
+
+## WHERE Statements
+Using the **WHERE** statement, we can subset out tables based on conditions that must be met.
+```{sql}
+SELECT *
+FROM orders
+WHERE gloss_amt_usd >= 1000
+LIMIT 5;
+```
+
+The WHERE statement can also be used with non-numerical data. We can use the = and != operators here. You also need to be sure to use single quotes
+```{sql}
+SELECT name, website, primary_poc
+FROM accounts
+WHERE name = 'Exxon Mobil';
+```
+
+## Arithmetic Operators
+### Derived Columns
+Creating a new column that is a combination of existing columns is known as a derived column.
+### Order of Operations
+Remember BOMDAS from maths class? The same order of operations apply when using arithmetic operators in SQL.
+```{sql}
+SELECT id, account_id, 
+       poster_amt_usd/(standard_amt_usd + gloss_amt_usd + poster_amt_usd) AS post_per
+FROM orders;
+```
+### Introduction to Logical Operators
+
+**LIKE** - This allows you to perform operations similar to using WHERE and =, but for cases when you might not know exactly what you are looking for.  The LIKE operator is frequently used with %. The % tells us that we might want any number of characters leading up to a particular set of characters or following a certain set of characters.
+```{sql}
+/* select all the companies whose names start with 'C' */
+SELECT name 
+FROM accounts
+WHERE name like 'C%'
+
+/* select All companies whose names contain the string 'one' somewhere in the name. */
+SELECT name
+FROM accounts
+WHERE name LIKE '%one%';
+```
+
+**IN** - This allows you to perform operations similar to using WHERE and =, but for more than one condition.  We can check one, two or many column values for which we want to pull data, but all within the same query. 
+TIP - In most SQL environments, you can use single or double quotation marks - and you may NEED to use double quotation marks if you have an apostrophe within the text you are attempting to pull.
+```{sql}
+SELECT name, primary_poc, sales_rep_id
+FROM accounts
+WHERE name IN ('Walmart', 'Target', 'Nordstrom');
+```
+**NOT** - This is used with IN and LIKE to select all of the rows NOT LIKE or NOT IN a certain condition.
+```{sql}
+/* Use the accounts table to find the account name, primary poc, and sales rep id for all stores except Walmart, Target, and Nordstrom */
+SELECT name, primary_poc, sales_rep_id
+FROM accounts
+WHERE name NOT IN ('Walmart', 'Target', 'Nordstrom');
+```
+
+**AND** & **BETWEEN** - These allow you to combine operations where all combined conditions must be true.
+* The AND operator is used within a WHERE statement to consider more than one logical clause at a time. Each time you link a new statement with an AND, you will need to specify the column you are interested in looking at.
+* Sometimes we can make a cleaner statement using BETWEEN than we can using AND. Particularly this is true when we are using the same column for different parts of our AND statement. e.g.:
+```{sql}
+/*Instead of writing : WHERE column >= 6 AND column <= 10 we can instead write*/ 
+WHERE column BETWEEN 6 AND 10
+```
+
+```{sql}
+/* Write a query that returns all the orders where the standard_qty is over 1000, the poster_qty is 0, and the gloss_qty is 0 */
+SELECT *
+FROM orders
+WHERE standard_qty > 1000 AND poster_qty = 0 AND gloss_qty = 0;
+
+/* Using the accounts table find all the companies whose names do not start with 'C' and end with 's' */
+SELECT name
+FROM accounts
+WHERE name NOT LIKE 'C%' AND name LIKE '%s';
+
+/* Use the web_events table to find all information regarding individuals who were contacted via organic or adwords and started their account at any point in 2016 sorted from newest to oldest */ 
+SELECT *
+FROM web_events
+WHERE channel IN ('organic', 'adwords') AND occurred_at BETWEEN '2016-01-01' AND '2017-01-01'
+ORDER BY occurred_at DESC;
+/*  You will notice that using BETWEEN is tricky for dates! While BETWEEN is generally inclusive of endpoints, it assumes the time is at 00:00:00 (i.e. midnight) for dates. This is the reason why we set the right-side endpoint of the period at '2017-01-01'. */
+```
+
+**OR** - This allow you to combine operations where at least one of the combined conditions must be true.
+Similar to the AND operator, the OR operator can combine multiple statements. Each time you link a new statement with an OR, you will need to specify the column you are interested in looking at.
+```{sql}
+/* Find list of orders ids where either gloss_qty or poster_qty is greater than 4000. Only include the id field in the resulting table. */
+SELECT id
+FROM orders
+WHERE gloss_qty > 4000 OR poster_qty > 4000;
+
+/* Write a query that returns a list of orders where the standard_qty is zero and either the gloss_qty or poster_qty is over 1000. */
+SELECT *
+FROM orders
+WHERE standard_qty = 0 AND (gloss_qty > 1000 OR poster_qty > 1000);
+
+/* Find all the company names that start with a 'C' or 'W', and the primary contact contains 'ana' or 'Ana', but it doesn't contain 'eana'*/
+SELECT *
+FROM accounts
+WHERE (name LIKE 'C%' OR name LIKE 'W%') 
+           AND ((primary_poc LIKE '%ana%' OR primary_poc LIKE '%Ana%') 
+           AND primary_poc NOT LIKE '%eana%');
+```
+
+## Summary of basic comands:
+![](summary_basic_commands.png)
+
+# JOINS
