@@ -4,7 +4,7 @@ output: html_notebook
 ---
 ## Entity relationship diagrams
 The "crow's foot" that connects the tables together shows us how the columns in one table relate to the columns in another table. 
-![](ERD.png)
+![](images/ERD.png)
 ## Types Of Statements
  A few statements include:
 * CREATE TABLE is a statement that creates a new table in a database.
@@ -152,6 +152,6 @@ WHERE (name LIKE 'C%' OR name LIKE 'W%')
 ```
 
 ## Summary of basic comands:
-![](summary_basic_commands.png)
+![](images/summary_basic_commands.png)
 
-# JOINS
+
