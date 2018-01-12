@@ -198,7 +198,7 @@ ON a.sales_rep_id = s.id
 ORDER BY a.name;
 ```
 
-3. Provide the *name* for each region for every *order*, as well as the account *name* and the *unit price* they paid (total_amt_usd/total) for the order. Your final table should have 3 columns: *region name, account name, and unit price*. A few accounts have 0 for *total*, so I divided by (total + 0.01) to assure not dividing by zero.
+3. Provide the *name* for each region for every *order*, as well as the account *name* and the *unit price* they paid (total_amt_usd/total) for the order. Your final table should have 3 columns: *region name, account name, and unit price*. A few accounts have 0 for *total*, so  divide by (total + 0.01) to assure not dividing by zero.
 ```{sql}
 SELECT r.name region, a.name account, 
        o.total_amt_usd/(o.total + 0.01) unit_price
@@ -212,7 +212,7 @@ ON o.account_id = a.id;
 ```
 
 ## Outer joins
-If we want to include data that only exists in one of the tables we ant to join we can use an outer join
+If we want to include data that only exists in one of the tables we want to join we can use an outer join
 ![](images/types_of_joins.png) 
 If there is not matching information in the JOINed table, then you will have columns with empty cells with a data type called NULL.
 Writing a LEFT join statement:
@@ -236,7 +236,7 @@ AND accounts.sales_rep_id = 325
 ```
 
 ### Questions
-1. Provide a table that provides the region for each sales_rep along with their associated accounts. This time only for the Midwest region. Your final table should include three columns: the region name, the sales rep name, and the account name. Sort the accounts alphabetically (A-Z) according to account name.
+1. Provide a table that provides the region for each sales_rep along with their associated accounts. This time only for the Midwest region. Your final table should include three columns: *the region name, the sales rep name, and the account name*. Sort the accounts alphabetically (A-Z) according to account name.
 ```{sql}
 SELECT r.name region, s.name rep, a.name account
 FROM sales_reps s
@@ -384,7 +384,7 @@ FROM orders;
 ```
 
 ## MIN and MAX
-MIN and MAX are aggregators that ignore NULL values.
+MIN and MAX are aggregators that *ignore NULL* values.
 Functionally, MIN and MAX are similar to COUNT in that they can be used on non-numerical columns. Depending on the column type, MIN will return the lowest number, earliest date, or non-numerical value as early in the alphabet as possible. As you might suspect, MAX does the opposite—it returns the highest number, the latest date, or the non-numerical value closest alphabetically to “Z.”
 
 ### Questions
@@ -416,7 +416,7 @@ LIMIT 1;
 
 ## AVG
 AVG returns the mean of the data - that is the sum of all of the values in the column divided by the number of values in a column.
-This aggregate function ignores the NULL values in both the numerator and the denominator.
+This aggregate function *ignores the NULL* values in both the numerator and the denominator.
 
 ### Questions
 1. Find the mean (AVERAGE) amount spent per order on each paper type, as well as the mean amount of each paper type purchased per order. Your final answer should have 6 values - one for each paper type for the average number of sales, as well as the average amount.
@@ -736,13 +736,13 @@ LIMIT 10;
 ```
 
 ## DATE Functions
-*GROUP*ing *BY* a date column is not usually very useful in SQL, as these columns tend to have transaction data down to a second. Keeping date information at such a granular data is both a blessing and a curse, as it gives really precise information (a blessing), but it makes grouping information together directly difficult (a curse).
+*GROUP*ing *BY* a date column is not usually very useful in SQL, as these columns tend to have transaction data down to a second. 
 Dates are stored in year, month, day, hour, minute, second, which helps us in truncating.
 There are a number of built in SQL functions that are aimed at helping us improve our experience in working with dates:
 In SQL dates are stored in the format YYYY-MM-DD with the time in hours, minutes and seconds at the end. 
 *DATE_TRUNC* allows you to truncate your date to a particular part of your date-time column. Common trunctions are day, month, and year.
 *DATE_PART* can be useful for pulling a specific portion of a date, but notice pulling month or day of the week (dow) means that you are no longer keeping the years in order. Rather you are grouping for certain components regardless of which year they belonged in.
-*Note:* DOW returns a value from 0-6 where 0 is Sunday and 6 is Saturday. 
+*Note:* DOW (day of week) returns a value from 0-6 where 0 is Sunday and 6 is Saturday. 
 
 ### Questions
 1. Find the sales in terms of total dollars for all orders in each *year*, ordered from greatest to least. Do you notice any trends in the yearly sales totals?
@@ -882,4 +882,61 @@ ORDER BY 3 DESC;
 ***
 
 # Subqueries
+Whenever we need to use existing tables to create a new table that we then want to query again, this is an indication that we will need to use some sort of *subquery*.
+
+e.g.Find the average number of events that occur for each day for each channel:
+(i) First, we needed to group by the day and channel. Then ordering by the number of events (the third column) gave us a quick way to answer the first question.
+```{sql}
+SELECT DATE_TRUNC('day',occurred_at) AS day,
+   channel, COUNT(*) as events
+FROM web_events
+GROUP BY 1,2
+ORDER BY 3 DESC;
+```
+(ii)Here you can see that to get the entire table in question 1 back, we included an * in our SELECT statement. You will need to be sure to alias your table.
+```{sql}
+SELECT *
+FROM (SELECT DATE_TRUNC('day',occurred_at) AS day,
+           channel, COUNT(*) as events
+     FROM web_events 
+     GROUP BY 1,2
+     ORDER BY 3 DESC) sub;
+```
+(iii) Finally, here we are able to get a table that shows the average number of events a day for each channel.. Since you broke out by day in inner query, this is giving you an average per day.
+```{sql}
+SELECT channel, AVG(events) AS average_events
+FROM (SELECT DATE_TRUNC('day',occurred_at) AS day,
+             channel, COUNT(*) as events
+      FROM web_events 
+      GROUP BY 1,2) sub
+GROUP BY channel
+ORDER BY 2 DESC;
+```
+*Format subqueries using indents in order to make it easier to read*
+
+## Subqueries Part II
+In the first subquery you wrote, you created a table that you could then query again in the FROM statement. However, if you are only returning a single value, you might use that value in a logical statement like WHERE, HAVING, or even SELECT - the value could be nested within a CASE statement. It can be used anyehwre you might have a table name, or a column name or individual value.
+*Note* that you should not include an alias when you write a subquery in a conditional statement. This is because the subquery is treated as an individual value (or set of values in the IN case) rather than as a table.
+
+e.g. Return the average quantity of each type of paper that was sold in the same moth as Parch & Poseys first order ever. 
+(i)To get the date of the first order you could write a subquery with a min function. 
+```{sql}
+SELECT DATE_TRUNC('month', MIN(occurred_at)) 
+FROM orders;
+```
+(ii)Then to pull the average for each, we could do this all in one query, but for readability, I provided two queries below to perform each separately.
+```{sql}
+SELECT AVG(standard_qty) avg_std, AVG(gloss_qty) avg_gls, AVG(poster_qty) avg_pst
+FROM orders
+WHERE DATE_TRUNC('month', occurred_at) = 
+     (SELECT DATE_TRUNC('month', MIN(occurred_at)) FROM orders);
+
+SELECT SUM(total_amt_usd)
+FROM orders
+WHERE DATE_TRUNC('month', occurred_at) = 
+      (SELECT DATE_TRUNC('month', MIN(occurred_at)) FROM orders);
+```
+Also, notice the query here compared a single value. Most conditional logic will work with subqueries containing one cell results. IN is the only type of conditional logic that will work when the inner query contains multiple results. If we returned an entire column IN would need to be used to perform a logical argument. If we are returning an entire table, then we must use an ALIAS for the table, and perform additional logic on the entire table.
+
+ 
 
