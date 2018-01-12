@@ -878,3 +878,8 @@ ON s.id = a.sales_rep_id
 GROUP BY s.name
 ORDER BY 3 DESC;
 ```
+
+***
+
+# Subqueries
+
