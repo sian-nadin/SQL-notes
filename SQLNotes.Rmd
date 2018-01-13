@@ -1735,3 +1735,222 @@ SELECT id,
 
 ***
 
+# SQL Advanced Joins & Performance tuning
+
+## FULL OUTER JOIN
+In earlier lessons, we covered inner joins, which produce results for which the join condition is matched in both tables.
+Venn diagrams, which are helpful for visualizing table joins, are provided below along with sample queries. Consider the circle on the left Table A and the circle on the right Table B.
+![](images/inner_join_venn.png)
+
+Left joins also include unmatched rows from the left table, which is indicated in the “FROM” clause.
+![](images/left_join_venn.png)
+Right joins are similar to left joins, but include unmatched data from the right table -- the one that’s indicated in the JOIN clause.
+![](images/right_join_venn.png)
+In some cases, you might want to include unmatched rows from both tables being joined. You can do this with a full outer join.
+![](images/full_outer_join_venn.png)
+A common application of this is when joining two tables on a timestamp. Let’s say you’ve got one table containing the number of item 1 sold each day, and another containing the number of item 2 sold. If a certain date (say, January 1, 2018) exists in the left table but not the right, while another date (say, January 2, 2018) exists in the right table but not the left:
+* a left join would drop the row with January 2, 2018 from the result set
+* a right join would drop January 1, 2018 from the result set
+The only way to make sure both January 1, 2018 and January 2, 2018 make it into the results is to do a full outer join. A full outer join returns unmatched records in each table with null values for the columns that came from the opposite table.
+If you wanted to return unmatched rows only, which is useful for some cases of data assessment, you can isolate them by adding the following line to the end of the query:
+![](images/full_outer_join_when.png)
+### Questions
+You’re not likely to use FULL JOIN (which can also be written as FULL OUTER JOIN) too often, but the syntax is worth practicing anyway. LEFT JOIN and RIGHT JOIN each return unmatched rows from one of the tables—FULL JOIN returns unmatched rows from both tables. FULL JOIN is commonly used in conjunction with aggregations to understand the amount of overlap between two tables.
+Say you're an analyst at Parch & Posey and you want to see:
+* each account who has a sales rep and each sales rep that has an account (all of the columns in these returned rows will be full)
+* but also each account that does not have a sales rep and each sales rep that does not have an account (some of the columns in these returned rows will be empty)
+This type of question is rare, but FULL OUTER JOIN is perfect for it. Write a query with FULL OUTER JOIN to fit the above described Parch & Posey scenario (selecting all of the columns in both of the relevant tables, accounts and sales_reps).
+```{sql}
+SELECT *
+  FROM accounts
+ FULL JOIN sales_reps ON accounts.sales_rep_id = sales_reps.id
+```
+If unmatched rows existed (they don't for this query), you could isolate them by adding the following line to the end of the query:
+```{sql}
+WHERE accounts.sales_rep_id IS NULL OR sales_reps.id IS NULL
+```
+
+## JOINS with Comparison operators
+If you recall from earlier lessons on joins, the join clause is evaluated before the where clause -- filtering in the join clause will eliminate rows before they are joined, while filtering in the WHERE clause will leave those rows in and produce some nulls.
+Inequality operators (a.k.a. comparison operators) don't only need to be date times or numbers, they also work on strings! You'll see how this works by completing the following quiz, which will also reinforce the concept of joining with comparison operators.
+Write a query that left joins the accounts table and the sales_reps tables on each sale rep's ID number and joins it using the < comparison operator on accounts.primary_poc and sales_reps.name, like so: accounts.primary_poc < sales_reps.name
+The query results should be a table with three columns: the account name (e.g. Johnson Controls), the primary contact name (e.g. Cammy Sosnowski), and the sales representative's name (e.g. Samuel Racine). Then answer the subsequent multiple choice question.
+```{sql}
+SELECT accounts.name as account_name,
+       accounts.primary_poc as poc_name,
+       sales_reps.name as sales_rep_name
+  FROM accounts
+  LEFT JOIN sales_reps
+    ON accounts.sales_rep_id = sales_reps.id
+   AND accounts.primary_poc < sales_reps.name
+```
+
+## Self JOINS
+Sometimes it can be useful to join a table onto itself. Most of the time you'll do this in ordr to find cases where two events both occurred, one after the other. 
+e.g. Imagine you want to know which accounts making multiple orders within 30 days. One way to do this would be to join the orders table onto itself with an inequality join. 
+First, we want to make sure that we're joining on the same account.In the first orders table, which we've labelled o1, we'll look up the account_id and compare it to the account_id in the second orders table, o2. Since we want the records in o2 to be within 28 days after the records in o1 we're going to set up two conditional statements within the JOIN clause, both with inequalities. First, we're going to join where o2.occurred_at > o1.occurred_at so we're going to find orders that happened after the original orer was placed. Then we're going to find orders where o2.occurred_at <= 28 days less than o1.occurred_at. 
+One thing to keep in mind when doing self joins is you'll need to use aliases to distinguish between the left and right tbales since it would be unclear if you were just to refer to one of them as orders in this case. 
+```{sql}
+SELECT o1.id AS o1_id,
+       o1.account_id AS o1_account_id,
+       o1.occurred_at AS o1_occurred_at,
+       o2.id AS o2_id,
+       o2.account_id AS o2_account_id,
+       o2.occurred_at AS o2_occurred_at
+  FROM orders o1
+ LEFT JOIN orders o2
+   ON o1.account_id = o2.account_id
+  AND o2.occurred_at > o1.occurred_at
+  AND o2.occurred_at <= o1.occurred_at + INTERVAL '28 days'
+ORDER BY o1.account_id, o1.occurred_at
+```
+One of the most common use cases for self JOINs is in cases where two events occurred, one after another. As you may have noticed in the previous video, using inequalities in conjunction with self JOINs is common.
+
+### Questions
+Modify the previous query to perform the same interval analysis except for the web_events table. Also:
+change the interval to 1 day to find web events that occur within one after another within one day
+add a column for the channel variable in both instances of the table in your query
+```{sql}
+SELECT we1.id AS we_id,
+       we1.account_id AS we1_account_id,
+       we1.occurred_at AS we1_occurred_at,
+       we1.channel AS we1_channel,
+       we2.id AS we2_id,
+       we2.account_id AS we2_account_id,
+       we2.occurred_at AS we2_occurred_at,
+       we2.channel AS we2_channel
+  FROM web_events we1 
+ LEFT JOIN web_events we2
+   ON we1.account_id = we2.account_id
+  AND we1.occurred_at > we2.occurred_at
+  AND we1.occurred_at <= we2.occurred_at + INTERVAL '1 day'
+ORDER BY we1.account_id, we2.occurred_at
+```
+
+## UNION
+JOINs allow you to combine two datasets side by side but sometimes it's neccessary to stack one on top of another. This might come in the form of several lists of events, email addresses or anything else that might be stored in a few different places. Alternatively, you might want to append an aggregation like a sum to an end of a list of individual records. You can do this with a *UNION*
+SQL's two strict rules for appending data:
+1. Both tables must have the same number of columns.
+2. Those columns must have the same data types in the same order as the first table.
+A common misconception is that column names have to be the same. Column names, in fact, don't need to be the same to append two tables but you will find that they typically are.
+Most instances in which you'd want to use UNION involve stitching together differnet parts of the same dataset. one thing to note is *UNION only appends distinct values*. When you use UNION the dataset is appended and any rows in the dataset that are exactly identical to the firsy dataset are dropped. *If you'd like to append all the values from the second table then you must use UNION ALL* 
+```{sql}
+SELECT * 
+FROM web_events
+WHERE channel = 'facebook'
+
+UNION ALL
+
+SELECT *
+FROM web_events_2
+```
+Since you're writing two different SELECT statements before UNION you can treat them differently before appending. For example, you can filter them differently using differnet WHERE clauses.
+Once you uNION two SELECT staments together you can perform iperations on the entire combined dataset rather than just on the individual parts. You can do this by UNIONing them together in a subquery so that the combined results are treated as a single results set. A cleaner way to do this might be to do the UNION in a common table expression and then do aggregations in the main query. 
+
+### Questions
+1. Write a query that uses UNION ALL on two instances (and selecting all columns) of the accounts table.
+```{sql}
+SELECT *
+    FROM accounts
+
+UNION ALL
+
+SELECT *
+  FROM accounts
+```
+
+2. Add a WHERE clause to each of the tables that you unioned in the query above, filtering the first table where name equals Walmart and filtering the second table where name equals Disney.
+```{sql}
+SELECT *
+    FROM accounts
+    WHERE name = 'Walmart'
+
+UNION ALL
+
+SELECT *
+  FROM accounts
+  WHERE name = 'Disney'
+```
+
+3. Perform the union in your first query (under the Appending Data via UNION header) in a common table expression and name it double_accounts. Then do a COUNT the number of times a name appears in the double_accounts table. If you do this correctly, your query results should have a count of 2 for each name.
+```{sql}
+WITH double_accounts AS (
+    SELECT *
+      FROM accounts
+
+    UNION ALL
+
+    SELECT *
+      FROM accounts
+)
+
+SELECT name,
+       COUNT(*) AS name_count
+ FROM double_accounts 
+GROUP BY 1
+ORDER BY 2 DESC
+```
+
+## Performance tuning 
+One way to make a query run faster is to reduce the number of calculations that need to be performed. Some of the high-level things that will affect the number of calculations a given query will make include:
+* Table size
+* Joins
+* Aggregations
+Query runtime is also dependent on some things that you can’t really control related to the database itself:
+* Other users running queries concurrently on the database
+* Database software and optimization (e.g. Postgres is optimized differently than Redshift)
+
+Filtering the data to only *include only the observations you need* can dramatically improve query speed. 
+e.g. If you've got iem series data limiting to a small time window can make your queries run much more quickly. 
+
+Keep in ind you can always *perform exploratory analysis on a subset of data*, refine your work into a final query, then remove the limitation and run your work accross the entore dataset. The final query might take a long time to run but at least you can run the intermediate steps quickly. You can get a subset of data using *LIMIT* at the end of your query. It's worth noting that LIMIT doesn't quite work the same way with aggregations. The aggregation is oerformed first, then the results are limited to the specified number of rows. So If you're using aggregates LIMIT will do nothing to speed up your query. If you want to LIMIT the dataset before doing the aggregation to speed things up a bit more you'll need to do it in a subquery and keep the LIMIT within the subquery.
+
+The second thing you can do, is make your joins less complicated, meaning you can *reduce the number of rows that are evaluated during the join*. It's better to reduce table sizes before joining them. You can do this by aggregating the tables before joining them. 
+
+You can add explain at the beginning of any working query to get a sense of how long it will take. You'll get an output called the query plan and it'll show the order in which your query will be executed. You can see the measure of cost listed next to the number of rows. Higher numbers means a longer run time. You can run *EXPLAIN* on a query and then modify the most time expensive steps and then run EXPLAIN again to see if the cost is reduced.
+
+## JOINing Subqueries
+Sub queries can be especially helpful in improving the performance of your queries. For example, imagine you'd like to see a bunch of metrics for a business on a daily basis. To do this, you'll need to join data from a few tables and then aggregate by day. You could do all of this in one main query:
+```{sql}
+SELECT DATE_TRUNC('day', o.occurred_at) AS date,
+      COUNT(DISTINCT a.sales_rep_id) AS active_sales_reps,
+      COUNT(DISTINCT o.id) AS orders,
+      COUNT(DISTINCT we.id) AS web_visits
+  FROM accounts a
+  JOIN orders o
+  ON account_id = a.id
+  JOIN web_events_full we
+  ON DATE_TRUNC('day', we.occurred_at) = DATE_TRUNC('day', o.occurred_at)
+GROUP BY 1
+ORDER BY 1 DESC
+```
+The pre aggregated dataset that is returned in the above code has 79,000 rows. There are some big advantages to aggregating the tables seperately in sub queries, then joining the pre aggregated sub queries. You can get the same results much more efficiently by aggreagting the tables seperately so that the counts are performed across far smaller datasets.   
+```{sql}
+SELECT COALESCE(orders.date, web_events.date) AS date,
+  orders.active_sales_reps,
+  orders.orders,
+  web_events.web_visits
+FROM(
+SELECT DATE_TRUNC('day', we.occurred_at) AS date,
+      COUNT(a.sales_rep_id) AS active_sales_reps,
+      COUNT(o.id) AS orders
+  FROM accounts a
+  JOIN orders o
+  ON account_id = a.id
+  GROUP BY 1
+  ) orders 
+  
+    FULL JOIN
+  (
+  SELECT DATE_TRUNC('day', we.occurred_at) As date,
+      COUNT(we.id) AS web_visits
+  FROM web_events_full we
+  GROUP BY 1
+  ) web_events
+  
+    ON web_events.date = orders.date
+ORDER BY 1 DESC
+```
+Both of these subqueries are around 1,000 rows. This way we'll be joining 1,000 onto 1,000 rows and joining dates onto other dates that match so it would be much less expensive. We're using a full join here in case one table has an observation the other one doesn't. 
+
+***
