@@ -1611,3 +1611,127 @@ SELECT id,
 FROM orders
 ```
 
+## Aggregates in Window functions
+When using window functions you can apply the same aggregates as undernormal circumstances: SUM, COUNT, AVG, MIN and MAX. 
+
+```{sql}
+SELECT id,
+       account_id,
+       standard_qty,
+       DATE_TRUNC('month', occurred_at) AS month,
+       DENSE_RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS dense_rank,
+       SUM(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS sum_std_qty,
+       COUNT(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS count_std_qty,
+       AVG(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS avg_std_qty,
+       MIN(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS min_std_qty,
+       MAX(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS max_std_qty
+FROM orders
+```
+If you were to remove ORDER BY DATE_TRUNC('month',occurred_at) n each line of the query that contains it in:
+The ORDER BY clause is one of two clauses integral to window functions. The ORDER and PARTITION define what is referred to as the “window”—the ordered subset of data over which calculations are made. Removing ORDER BY just leaves an unordered partition; in our query's case, each column's value is simply an aggregation (e.g. sum, count, average, minimum, or maximum) of all the standard_qty values in its respective account_id.
+
+## Aliases for multiple windows
+If you're planning to write several window functions in the same query using the same window you can create an alias. Using the previous code snippet we'll define the alias using a *WINDOW* clause which would normall y go between the WHERE clause and the GROUP BY clause. Since this query has neither of those we'll put this after FROM. 
+```{sql}
+SELECT id,
+       account_id,
+       standard_qty,
+       DATE_TRUNC('month', occurred_at) AS month,
+       DENSE_RANK() OVER main_window AS dense_rank,
+       SUM(standard_qty) OVER main_window AS sum_std_qty,
+       COUNT(standard_qty) OVER main_window AS count_std_qty,
+       AVG(standard_qty) OVER main_window AS avg_std_qty,
+       MIN(standard_qty) OVER main_window AS min_std_qty,
+       MAX(standard_qty) OVER main_window AS max_std_qty
+FROM orders
+WINDOW main_window AS (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at))
+```
+
+### Questions
+Create and use an alias to shorten the following query that has multiple window functions. Name the alias account_year_window, which is more descriptive than main_window in the example above.
+```{sql}
+SELECT id,
+       account_id,
+       DATE_TRUNC('year',occurred_at) AS year,
+       DENSE_RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at)) AS dense_rank,
+       total_amt_usd,
+       SUM(total_amt_usd) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at)) AS sum_total_amt_usd,
+       COUNT(total_amt_usd) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at)) AS count_total_amt_usd,
+       AVG(total_amt_usd) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at)) AS avg_total_amt_usd,
+       MIN(total_amt_usd) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at)) AS min_total_amt_usd,
+       MAX(total_amt_usd) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at)) AS max_total_amt_usd
+FROM orders
+```
+Using an alias this would be:
+```{sql}
+SELECT id,
+       account_id,
+       DATE_TRUNC('year',occurred_at) AS year,
+       DENSE_RANK() OVER account_year_window AS dense_rank,
+       total_amt_usd,
+       SUM(total_amt_usd) OVER account_year_window AS sum_total_amt_usd,
+       COUNT(total_amt_usd) OVER account_year_window AS count_total_amt_usd,
+       AVG(total_amt_usd) OVER account_year_window AS avg_total_amt_usd,
+       MIN(total_amt_usd) OVER account_year_window AS min_total_amt_usd,
+       MAX(total_amt_usd) OVER account_year_window AS max_total_amt_usd
+FROM orders 
+WINDOW account_year_window AS (PARTITION BY account_id ORDER BY DATE_TRUNC('year',occurred_at))
+```
+
+## Comparing a row to previous row
+*LAG* pulls from the previous row and *LEAD* pulls from the next row. When using LAG if there are no previous rows then you'll get NULL. 
+e.g. You want to determine how the current order's total revenue (i.e. from sales of all types of paper) revenue compares to the next order's total revenue.
+```{sql}
+SELECT occurred_at,
+       total_amt_usd,
+       LEAD(total_amt_usd) OVER (ORDER BY occurred_at) AS lead,
+       LEAD(total_amt_usd) OVER (ORDER BY occurred_at) - total_amt_usd AS lead_difference
+FROM (
+SELECT occurred_at,
+       SUM(total_amt_usd) AS total_amt_usd
+  FROM orders 
+ GROUP BY 1
+) sub
+```
+
+## Introduction to percentiles
+You can use window functions to identify what percentile (or quartile, or any other subdivision) a given row falls into. The syntax is NTILE(*# of buckets*). In this case, ORDER BY determines which column to use to determine the quartiles (or whatever number of ‘tiles you specify).
+In cases with relatively few rows in a window, the NTILE function doesn’t calculate exactly as you might expect. For example, If you only had two records and you were measuring percentiles, you’d expect one record to define the 1st percentile, and the other record to define the 100th percentile. Using the NTILE function, what you’d actually see is one record in the 1st percentile, and one in the 2nd percentile. If you’re working with very small windows, keep this in mind and consider using quartiles or similarly small bands.
+
+### Questions
+You can use partitions with percentiles to determine the percentile of a specific subset of all rows. Imagine you're an analyst at Parch & Posey and you want to determine the largest orders (in terms of quantity) a specific customer has made to encourage them to order more similarly sized large orders. You only want to consider the NTILE for that customer's account_id.
+1. Use the NTILE functionality to divide the accounts into 4 levels in terms of the amount of standard_qty for their orders. Your resulting table should have the account_id, the occurred_at time for each order, the total amount of standard_qty paper purchased, and one of four levels in a standard_quartile column.
+```{sql}
+SELECT id,
+       account_id,
+       occurred_at,
+       standard_qty,
+       NTILE(4) OVER (PARTITION BY account_id ORDER BY standard_qty) AS standard_quartile,
+  FROM orders 
+ ORDER BY account_id DESC
+```
+
+2. Use the NTILE functionality to divide the accounts into two levels in terms of the amount of gloss_qty for their orders. Your resulting table should have the account_id, the occurred_at time for each order, the total amount of gloss_qty paper purchased, and one of two levels in a gloss_half column.
+```{sql}
+SELECT id,
+       account_id,
+       occurred_at,
+       gloss_qty,
+       NTILE(2) OVER (PARTITION BY account_id ORDER BY gloss_qty) AS gloss_half,
+  FROM orders 
+ ORDER BY account_id DESC
+```
+
+3. Use the NTILE functionality to divide the accounts into 100 levels in terms of the amount of total_amt_usd for their orders. Your resulting table should have the account_id, the occurred_at time for each order, the total amount of total_amt_usd paper purchased, and one of 100 levels in a total_percentile column.
+```{sql}
+SELECT id,
+       account_id,
+       occurred_at,
+       total_amt_usd,
+       NTILE(100) OVER (PARTITION BY account_id ORDER BY total_amt_usd) AS total_percentile
+  FROM orders 
+ ORDER BY account_id DESC
+```
+
+***
+
