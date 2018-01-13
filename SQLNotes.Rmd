@@ -1557,3 +1557,57 @@ SELECT standard_amt_usd,
 FROM orders
 ```
 
+## ROW_NUMBER & RANK
+*ROW_NUMBER()* displays the number of a given row within the window you define. It starts at 1 and and numbers the rows according to the ORDER BY part of the window statement. It doesn't require you to specify a variable within the parentheses. 
+Here, we're ordering by the ID field which increments by one every row so the id and row_num fieds always have the same value. 
+```{sql}
+SELECT id,
+        account_id,
+        occurred_at,
+       ROW_NUMBER() OVER (ORDER BY id) AS row_num
+FROM orders
+```
+If we order by occurred_at the rows are ordered differently and the row_num column is therefore assigned differently. The row_num no longer matches up with ids. 
+```{sql}
+SELECT id,
+        account_id,
+        occurred_at,
+       ROW_NUMBER() OVER (ORDER BY occurred_at) AS row_num
+FROM orders
+```
+Using a PARTITION BY clause we can start the count over at one again in each partition. Let's partition by account_id. This now shows us the row number within each account_id where row one is the first order that occurred. 
+```{sql}
+SELECT id,
+        account_id,
+        occurred_at,
+       ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY occurred_at) AS row_num
+FROM orders
+```
+
+There's another fnction, *RANK()* that does something similar. The results may look the same but there's a subtle difference. If two lines in a row have the same value for occurred_at they're given the same rank, whereas ROW_NUMBER() gives them different numbers.   
+```{sql}
+SELECT id,
+        account_id,
+        occurred_at,
+       RANK() OVER (PARTITION BY account_id ORDER BY occurred_at) AS row_num
+FROM orders
+```
+You'll notice the differenc if you order by date trunc month. Entries with the same month are now given the same rank and the rank column now skips some values to make up for it. There's a similar function, *DENSE_RANK()* which doesn't skip values after assigning several rows with the same rank. 
+```{sql}
+SELECT id,
+        account_id,
+        DATE_TRUNC('month', occurred_at) as month,
+       RANK() OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month', occurred_at)) AS row_num
+FROM orders
+```
+
+### Questions
+Select the id, account_id, and total variable from the orders table, then create a column called total_rank that ranks this total amount of paper ordered (from highest to lowest) for each account using a partition. Your final table should have these four columns.
+```{sql}
+SELECT id,
+       account_id,
+       total,
+       RANK() OVER (PARTITION BY account_id ORDER BY total DESC) AS total_rank
+FROM orders
+```
+
