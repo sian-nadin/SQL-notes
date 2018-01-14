@@ -12,7 +12,6 @@ The "crow's foot" that connects the tables together shows us how the columns in 
 * SELECT allows you to read data and display it. This is called a query.
 
 ## SELECT & FROM Statements
-Here you were introduced to two statements that will be used in every query you write
 * SELECT - what columns you want back.
 * FROM - what table you are querying from. 
 ```{sql}
@@ -21,7 +20,7 @@ FROM orders;
 ```
 
 ## LIMIT Statement
- The LIMIT statement is useful when you want to see just the first few rows of a table. This can be much faster for loading than if we load the entire dataset.
+The LIMIT statement is useful when you want to see just the first few rows of a table. This can be much faster for loading than if we load the entire dataset.
 The LIMIT command is always the very last part of a query. An example of showing just the first 10 rows of the orders table with all of the columns might look like the following:
 ```{sql}
 SELECT *
@@ -56,7 +55,7 @@ WHERE gloss_amt_usd >= 1000
 LIMIT 5;
 ```
 
-The WHERE statement can also be used with non-numerical data. We can use the = and != operators here. You also need to be sure to use single quotes
+The WHERE statement can also be used with non-numerical data. We can use the = and != operators here. You also need to be sure to use single quotes.
 ```{sql}
 SELECT name, website, primary_poc
 FROM accounts
@@ -67,14 +66,14 @@ WHERE name = 'Exxon Mobil';
 ### Derived Columns
 Creating a new column that is a combination of existing columns is known as a derived column.
 ### Order of Operations
-Remember BOMDAS from maths class? The same order of operations apply when using arithmetic operators in SQL.
+The order of operations when using arithmetic operators in SQL is BEMDAS (Brackets, exponent, multiplication, division, addittio, subtraction) .
 ```{sql}
 SELECT id, account_id, 
        poster_amt_usd/(standard_amt_usd + gloss_amt_usd + poster_amt_usd) AS post_per
 FROM orders;
 ```
-### Introduction to Logical Operators
 
+### Introduction to Logical Operators
 **LIKE** - This allows you to perform operations similar to using WHERE and =, but for cases when you might not know exactly what you are looking for.  The LIKE operator is frequently used with %. The % tells us that we might want any number of characters leading up to a particular set of characters or following a certain set of characters.
 ```{sql}
 /* select all the companies whose names start with 'C' */
@@ -89,12 +88,13 @@ WHERE name LIKE '%one%';
 ```
 
 **IN** - This allows you to perform operations similar to using WHERE and =, but for more than one condition.  We can check one, two or many column values for which we want to pull data, but all within the same query. 
-TIP - In most SQL environments, you can use single or double quotation marks - and you may NEED to use double quotation marks if you have an apostrophe within the text you are attempting to pull.
+In most SQL environments, you can use single or double quotation marks - and you may NEED to use double quotation marks if you have an apostrophe within the text you are attempting to pull.
 ```{sql}
 SELECT name, primary_poc, sales_rep_id
 FROM accounts
 WHERE name IN ('Walmart', 'Target', 'Nordstrom');
 ```
+
 **NOT** - This is used with IN and LIKE to select all of the rows NOT LIKE or NOT IN a certain condition.
 ```{sql}
 /* Use the accounts table to find the account name, primary poc, and sales rep id for all stores except Walmart, Target, and Nordstrom */
@@ -130,7 +130,7 @@ ORDER BY occurred_at DESC;
 /*  You will notice that using BETWEEN is tricky for dates! While BETWEEN is generally inclusive of endpoints, it assumes the time is at 00:00:00 (i.e. midnight) for dates. This is the reason why we set the right-side endpoint of the period at '2017-01-01'. */
 ```
 
-**OR** - This allow you to combine operations where at least one of the combined conditions must be true.
+**OR** - This allows you to combine operations where at least one of the combined conditions must be true.
 Similar to the AND operator, the OR operator can combine multiple statements. Each time you link a new statement with an OR, you will need to specify the column you are interested in looking at.
 ```{sql}
 /* Find list of orders ids where either gloss_qty or poster_qty is greater than 4000. Only include the id field in the resulting table. */
@@ -170,6 +170,7 @@ JOIN accounts
 ON orders.account_id = accounts.id
 ```
 Notice that we need to specify every table a column comes from in the SELECT statement.
+
 ### ALIAS
 When we JOIN tables together, it is nice to give each table an alias. Frequently an alias is just the first letter of the table name. 
 ```{sql}
@@ -215,6 +216,7 @@ ON o.account_id = a.id;
 If we want to include data that only exists in one of the tables we want to join we can use an outer join
 ![](images/types_of_joins.png) 
 If there is not matching information in the JOINed table, then you will have columns with empty cells with a data type called NULL.
+
 Writing a LEFT join statement:
 ![](images/left_join.png) 
 ![](images/left_join_pt2.png) 
@@ -385,7 +387,7 @@ FROM orders;
 
 ## MIN and MAX
 MIN and MAX are aggregators that *ignore NULL* values.
-Functionally, MIN and MAX are similar to COUNT in that they can be used on non-numerical columns. Depending on the column type, MIN will return the lowest number, earliest date, or non-numerical value as early in the alphabet as possible. As you might suspect, MAX does the opposite—it returns the highest number, the latest date, or the non-numerical value closest alphabetically to “Z.”
+Functionally, MIN and MAX are similar to COUNT in that they can be used on non-numerical columns. Depending on the column type, MIN will return the lowest number, earliest date, or non-numerical value as early in the alphabet as possible. As you might suspect, MAX does the opposite — it returns the highest number, the latest date, or the non-numerical value closest alphabetically to “Z.”
 
 ### Questions
 1. When was the earliest order ever placed?
@@ -444,7 +446,8 @@ GROUP BY can be used to aggregate data within subsets of the data. For example, 
 Any column in the SELECT statement that is not within an aggregator must be in the GROUP BY clause.
 The GROUP BY always goes between WHERE and ORDER BY.
 ORDER BY works like SORT in spreadsheet software.
-SQL evaluates the aggregations before the LIMIT clause. If you don’t group by any columns, you’ll get a 1-row result—no problem there. If you group by a column with enough unique values that it exceeds the LIMIT number, the aggregates will be calculated, and then some rows will simply be omitted from the results.
+
+SQL evaluates the aggregations before the LIMIT clause. If you don’t GROUP BY any columns, you’ll get a 1-row result — no problem there. If you GROUP BY a column with enough unique values that it exceeds the LIMIT number, the aggregates will be calculated, and then some rows will simply be omitted from the results.
 This is a nice way to do things because you know you’re going to get the correct aggregates. If SQL cuts the table down to 100 rows, then performed the aggregations, your results would be substantially different.
 
 Note: You can reference the columns in your select statement in GROUP BY and ORDER BY clauses with numbers that follow the order they appear in the select statement. For example
@@ -803,6 +806,7 @@ The CASE statement always goes in the SELECT clause.
 CASE must include the following components: WHEN, THEN, and END. ELSE is an optional component to catch cases that didn’t meet any of the other previous CASE conditions.
 You can make any conditional statement using any conditional operator (like WHERE) between WHEN and THEN. This includes stringing together multiple conditional statements using AND and OR.
 You can include multiple WHEN statements, as well as an ELSE statement again, to deal with any unaddressed conditions.
+
 ### Example
 In a quiz question in the previous Basic SQL lesson, you saw this question:
 1. Create a column that divides the standard_amt_usd by the standard_qty to find the unit price for standard paper for each order. Limit the results to the first 10 orders, and include the id and account_id fields. *NOTE - you will be thrown an error with the correct solution to this question. This is for a division by zero. You will learn how to get a solution without an error to this query when you learn about CASE statements in a later section.*
@@ -1043,6 +1047,7 @@ HAVING SUM(o.total_amt_usd) = (
               ON r.id = s.region_id
               GROUP BY r.name) sub);
 ```
+
 3. For the name of the account that purchased the most (in total over their lifetime as a customer) standard_qty paper, how many accounts still had more in total purchases? 
 First, we want to find the account that had the most standard_qty paper. The query here pulls that account, as well as the total amount:
 ```{sql}
@@ -1088,6 +1093,7 @@ FROM (SELECT a.name
                         LIMIT 1) inner_tab)
             ) counter_tab;
 ```
+
 4. For the customer that spent the most (in total over their lifetime as a customer) total_amt_usd, how many web_events did they have for each channel?
 Here, we first want to pull the customer with the most spent in lifetime value.
 ```{sql}
@@ -1116,6 +1122,7 @@ GROUP BY 1, 2
 ORDER BY 3 DESC;
 ```
 I added an ORDER BY for no real reason, and the account name to assure I was only pulling from one account.
+
 5. What is the lifetime average amount spent in terms of total_amt_usd for the top 10 total spending accounts?
 First, we just want to find the top 10 accounts in terms of highest total_amt_usd.
 ```{sql}
@@ -1138,6 +1145,7 @@ FROM (SELECT a.id, a.name, SUM(o.total_amt_usd) tot_spent
       ORDER BY 3 DESC
        LIMIT 10) temp;
 ```
+
 6. What is the lifetime average amount spent in terms of total_amt_usd for only the companies that spent more than the average of all orders.
 First, we want to pull the average of all accounts in terms of total_amt_usd:
 ```{sql}
@@ -1464,8 +1472,8 @@ SELECT *,
   CAST (year || '-' || DATE_PART('month', TO_DATE(month, 'month')) || '-' || day AS date) AS formatted_date
 FROM ad_clicks
 ```
-DATE_PART('month', TO_DATE(month, 'month')) here changed a month name into the number associated with that particular month.
-Then you can change a string to a date using CAST. CAST is actually useful to change lots of column types. Commonly you might be doing as you saw here, where you change a string to a date using CAST(date_column AS DATE). However, you might want to make other changes to your columns in terms of their data types. 
+DATE_PART('month', TO_DATE(month, 'month')) here changed month names into the numbers associated with that particular month.
+Then you can change a string to a date using *CAST*. CAST is actually useful to change lots of column types. Commonly you might be doing as you saw here, where you change a string to a date using CAST(date_column AS DATE). However, you might want to make other changes to your columns in terms of their data types. 
 In this example, instead of CAST(date_column AS DATE), you can use date_column::DATE.
 
 Most of the functions presented in this lesson are specific to strings. They won’t work with dates, integers or floating-point numbers. However, using any of these functions will automatically change the data to the appropriate type.
@@ -1479,7 +1487,7 @@ FROM sf_crime_data;
 ```
 
 ## COALESCE
-Occassionally you'll end up with a datset that contains some nulls that you'd prefer to have some actual values. For e.g. we may want to label a NULL value in the primary_poc column as "no poc" so the results will be easily understanable. You can use COALESCE to replace the NULL values. 
+Occassionally you'll end up with a datset that contains some NULLs that you'd prefer to have some actual values. For e.g. we may want to label a NULL value in the primary_poc column as "no poc" so the results will be easily understanable. You can use *COALESCE* to replace the NULL values. 
 ```{sql}
 SELECT *,
   COALESCE(primary_poc, 'no POC') AS primary_poc_modified
@@ -1518,9 +1526,10 @@ WHERE o.total IS NULL;
 ```
 
 ***
+
 # SQL Window functions
 [PostgreSQL’s documentation](https://www.postgresql.org/docs/9.1/static/tutorial-window.html) does an excellent job of introducing the concept of Window Functions: a window function performs a calculation across a set of table rows that are somehow related to the current row. This is comparable to the type of calculation that can be done with an aggregate function. But unlike regular aggregate functions, use of a window function does not cause rows to become grouped into a single output row — the rows retain their separate identities. Behind the scenes, the window function is able to access more than just the current row of the query result.
-Through introducing window functions, we have also introduced two statements that you may not be familiar with: OVER and PARTITION BY. These are key to window functions. Not every window function uses PARTITION BY; we can also use ORDER BY or no statement at all depending on the query we want to run.
+Through introducing window functions, we have also introduced two statements that you may not be familiar with: *OVER* and PARTITION BY. These are key to window functions. Not every window function uses PARTITION BY; we can also use ORDER BY or no statement at all depending on the query we want to run.
 Note: You can’t use window functions and standard aggregations in the same query. More specifically, you can’t include window functions in a GROUP BY clause.
 
 e.g. If we wanted to get a running total of how much standard paper we've sold to date. 
@@ -1530,7 +1539,7 @@ SELECT standard_qty
   FROM orders
 ```
 This query uses an aggregation without using GROUP BY. 
-*OVER* designates the aggregation as a window function. Can read the above as take the sum of standard paper across all rows leading up to a given row in order by occured_at. 
+*OVER* designates the aggregation as a window function. Can read the above as "take the sum of standard paper across all rows leading up to a given row in order by occured_at". 
 
 Let's say that instead we wanted to start the running total over at the beginning of each month. To narrow the window from the entire dataset to individual groups within the dataset you use the *PARTITION BY* function. Now this query groups and orders the query by the month the transaction occurred. Within each month it's ordered by occurred_at and the running total sums across that current row and all previous rows of standard quantity.
 The ORDER BY treats each partition as seperate. It also creates the running total. Without ORDER BY each value will simply be a sum of all the standard_qty values in its respective month. 
@@ -1584,7 +1593,7 @@ SELECT id,
 FROM orders
 ```
 
-There's another fnction, *RANK()* that does something similar. The results may look the same but there's a subtle difference. If two lines in a row have the same value for occurred_at they're given the same rank, whereas ROW_NUMBER() gives them different numbers.   
+There's another function, *RANK()* that does something similar. The results may look the same but there's a subtle difference. If two lines in a row have the same value for occurred_at they're given the same rank, whereas ROW_NUMBER() gives them different numbers.   
 ```{sql}
 SELECT id,
         account_id,
@@ -1592,7 +1601,7 @@ SELECT id,
        RANK() OVER (PARTITION BY account_id ORDER BY occurred_at) AS row_num
 FROM orders
 ```
-You'll notice the differenc if you order by date trunc month. Entries with the same month are now given the same rank and the rank column now skips some values to make up for it. There's a similar function, *DENSE_RANK()* which doesn't skip values after assigning several rows with the same rank. 
+You'll notice the difference if you order by DATE_TRUNC month. Entries with the same month are now given the same rank and the rank column now skips some values to make up for it. There's a similar function, *DENSE_RANK()* which doesn't skip values after assigning several rows with the same rank. 
 ```{sql}
 SELECT id,
         account_id,
@@ -1613,7 +1622,6 @@ FROM orders
 
 ## Aggregates in Window functions
 When using window functions you can apply the same aggregates as undernormal circumstances: SUM, COUNT, AVG, MIN and MAX. 
-
 ```{sql}
 SELECT id,
        account_id,
@@ -1627,11 +1635,11 @@ SELECT id,
        MAX(standard_qty) OVER (PARTITION BY account_id ORDER BY DATE_TRUNC('month',occurred_at)) AS max_std_qty
 FROM orders
 ```
-If you were to remove ORDER BY DATE_TRUNC('month',occurred_at) n each line of the query that contains it in:
+If you were to remove ORDER BY DATE_TRUNC('month',occurred_at) in each line of the query that contains it:
 The ORDER BY clause is one of two clauses integral to window functions. The ORDER and PARTITION define what is referred to as the “window”—the ordered subset of data over which calculations are made. Removing ORDER BY just leaves an unordered partition; in our query's case, each column's value is simply an aggregation (e.g. sum, count, average, minimum, or maximum) of all the standard_qty values in its respective account_id.
 
 ## Aliases for multiple windows
-If you're planning to write several window functions in the same query using the same window you can create an alias. Using the previous code snippet we'll define the alias using a *WINDOW* clause which would normall y go between the WHERE clause and the GROUP BY clause. Since this query has neither of those we'll put this after FROM. 
+If you're planning to write several window functions in the same query using the same window you can create an alias. Using the previous code snippet we'll define the alias using a *WINDOW* clause which would normally go between the WHERE clause and the GROUP BY clause. Since this query has neither of those we'll put this after FROM. 
 ```{sql}
 SELECT id,
        account_id,
@@ -1738,20 +1746,19 @@ SELECT id,
 # SQL Advanced Joins & Performance tuning
 
 ## FULL OUTER JOIN
-In earlier lessons, we covered inner joins, which produce results for which the join condition is matched in both tables.
-Venn diagrams, which are helpful for visualizing table joins, are provided below along with sample queries. Consider the circle on the left Table A and the circle on the right Table B.
+In earlier lessons, we covered inner joins, which produces results for which the JOIN condition is matched in both tables.
+Venn diagrams are provided below along with sample queries. Consider the circle on the left Table A and the circle on the right Table B.
 ![](images/inner_join_venn.png)
-
-Left joins also include unmatched rows from the left table, which is indicated in the “FROM” clause.
+LEFT JOINs also include unmatched rows from the left table, which is indicated in the “FROM” clause.
 ![](images/left_join_venn.png)
-Right joins are similar to left joins, but include unmatched data from the right table -- the one that’s indicated in the JOIN clause.
+RIGHT JOINs are similar to LEFT JOIN, but include unmatched data from the right table - the one that’s indicated in the JOIN clause.
 ![](images/right_join_venn.png)
-In some cases, you might want to include unmatched rows from both tables being joined. You can do this with a full outer join.
+In some cases, you might want to include unmatched rows from both tables being joined. You can do this with a FULL OUTER JOIN.
 ![](images/full_outer_join_venn.png)
 A common application of this is when joining two tables on a timestamp. Let’s say you’ve got one table containing the number of item 1 sold each day, and another containing the number of item 2 sold. If a certain date (say, January 1, 2018) exists in the left table but not the right, while another date (say, January 2, 2018) exists in the right table but not the left:
-* a left join would drop the row with January 2, 2018 from the result set
-* a right join would drop January 1, 2018 from the result set
-The only way to make sure both January 1, 2018 and January 2, 2018 make it into the results is to do a full outer join. A full outer join returns unmatched records in each table with null values for the columns that came from the opposite table.
+* a LEFT JOIN would drop the row with January 2, 2018 from the result set
+* a RIGHT JOIN would drop January 1, 2018 from the result set
+The only way to make sure both January 1, 2018 and January 2, 2018 make it into the results is to do a FULL OUTER JOIN. A FULL OUTER JOIN returns unmatched records in each table with null values for the columns that came from the opposite table.
 If you wanted to return unmatched rows only, which is useful for some cases of data assessment, you can isolate them by adding the following line to the end of the query:
 ![](images/full_outer_join_when.png)
 ### Questions
@@ -1771,8 +1778,8 @@ WHERE accounts.sales_rep_id IS NULL OR sales_reps.id IS NULL
 ```
 
 ## JOINS with Comparison operators
-If you recall from earlier lessons on joins, the join clause is evaluated before the where clause -- filtering in the join clause will eliminate rows before they are joined, while filtering in the WHERE clause will leave those rows in and produce some nulls.
-Inequality operators (a.k.a. comparison operators) don't only need to be date times or numbers, they also work on strings! You'll see how this works by completing the following quiz, which will also reinforce the concept of joining with comparison operators.
+If you recall from earlier lessons on joins, the join clause is evaluated before the where clause - filtering in the join clause will eliminate rows before they are joined, while filtering in the WHERE clause will leave those rows in and produce some NULLs.
+Inequality operators (a.k.a. comparison operators) don't only need to be date times or numbers, they also work on strings.
 Write a query that left joins the accounts table and the sales_reps tables on each sale rep's ID number and joins it using the < comparison operator on accounts.primary_poc and sales_reps.name, like so: accounts.primary_poc < sales_reps.name
 The query results should be a table with three columns: the account name (e.g. Johnson Controls), the primary contact name (e.g. Cammy Sosnowski), and the sales representative's name (e.g. Samuel Racine). Then answer the subsequent multiple choice question.
 ```{sql}
@@ -1786,10 +1793,10 @@ SELECT accounts.name as account_name,
 ```
 
 ## Self JOINS
-Sometimes it can be useful to join a table onto itself. Most of the time you'll do this in ordr to find cases where two events both occurred, one after the other. 
-e.g. Imagine you want to know which accounts making multiple orders within 30 days. One way to do this would be to join the orders table onto itself with an inequality join. 
-First, we want to make sure that we're joining on the same account.In the first orders table, which we've labelled o1, we'll look up the account_id and compare it to the account_id in the second orders table, o2. Since we want the records in o2 to be within 28 days after the records in o1 we're going to set up two conditional statements within the JOIN clause, both with inequalities. First, we're going to join where o2.occurred_at > o1.occurred_at so we're going to find orders that happened after the original orer was placed. Then we're going to find orders where o2.occurred_at <= 28 days less than o1.occurred_at. 
-One thing to keep in mind when doing self joins is you'll need to use aliases to distinguish between the left and right tbales since it would be unclear if you were just to refer to one of them as orders in this case. 
+Sometimes it can be useful to join a table onto itself. Most of the time you'll do this in order to find cases where two events both occurred, one after the other. 
+e.g. Imagine you want to know which accounts are making multiple orders within 30 days. One way to do this would be to join the orders table onto itself with an inequality join. 
+First, we want to make sure that we're joining on the same account. In the first orders table, which we've labelled o1, we'll look up the account_id and compare it to the account_id in the second orders table, o2. Since we want the records in o2 to be within 28 days after the records in o1 we're going to set up two conditional statements within the JOIN clause, both with inequalities. First, we're going to join where o2.occurred_at > o1.occurred_at so we're going to find orders that happened after the original orer was placed. Then we're going to find orders where o2.occurred_at <= 28 days less than o1.occurred_at. 
+One thing to keep in mind when doing self joins is you'll need to use aliases to distinguish between the left and right tables since it would be unclear if you were just to refer to one of them as orders in this case. 
 ```{sql}
 SELECT o1.id AS o1_id,
        o1.account_id AS o1_account_id,
@@ -1804,7 +1811,7 @@ SELECT o1.id AS o1_id,
   AND o2.occurred_at <= o1.occurred_at + INTERVAL '28 days'
 ORDER BY o1.account_id, o1.occurred_at
 ```
-One of the most common use cases for self JOINs is in cases where two events occurred, one after another. As you may have noticed in the previous video, using inequalities in conjunction with self JOINs is common.
+One of the most common use cases for self JOINs is in cases where two events occurred, one after another. As you may have noticed, using inequalities in conjunction with self JOINs is common.
 
 ### Questions
 Modify the previous query to perform the same interval analysis except for the web_events table. Also:
@@ -1833,7 +1840,7 @@ SQL's two strict rules for appending data:
 1. Both tables must have the same number of columns.
 2. Those columns must have the same data types in the same order as the first table.
 A common misconception is that column names have to be the same. Column names, in fact, don't need to be the same to append two tables but you will find that they typically are.
-Most instances in which you'd want to use UNION involve stitching together differnet parts of the same dataset. one thing to note is *UNION only appends distinct values*. When you use UNION the dataset is appended and any rows in the dataset that are exactly identical to the firsy dataset are dropped. *If you'd like to append all the values from the second table then you must use UNION ALL* 
+Most instances in which you'd want to use UNION involve stitching together differnet parts of the same dataset. One thing to note is *UNION only appends distinct values*. When you use UNION the dataset is appended and any rows in the dataset that are exactly identical to the firsy dataset are dropped. *If you'd like to append all the values from the second table then you must use UNION ALL* 
 ```{sql}
 SELECT * 
 FROM web_events
@@ -1845,7 +1852,7 @@ SELECT *
 FROM web_events_2
 ```
 Since you're writing two different SELECT statements before UNION you can treat them differently before appending. For example, you can filter them differently using differnet WHERE clauses.
-Once you uNION two SELECT staments together you can perform iperations on the entire combined dataset rather than just on the individual parts. You can do this by UNIONing them together in a subquery so that the combined results are treated as a single results set. A cleaner way to do this might be to do the UNION in a common table expression and then do aggregations in the main query. 
+Once you UNION two SELECT statements together you can perform operations on the entire combined dataset rather than just on the individual parts. You can do this by UNIONing them together in a subquery so that the combined results are treated as a single results set. A cleaner way to do this might be to do the UNION in a common table expression and then do aggregations in the main query. 
 
 ### Questions
 1. Write a query that uses UNION ALL on two instances (and selecting all columns) of the accounts table.
@@ -1901,13 +1908,13 @@ Query runtime is also dependent on some things that you can’t really control r
 * Database software and optimization (e.g. Postgres is optimized differently than Redshift)
 
 Filtering the data to only *include only the observations you need* can dramatically improve query speed. 
-e.g. If you've got iem series data limiting to a small time window can make your queries run much more quickly. 
+e.g. If you've got time series data limiting to a small time window can make your queries run much more quickly. 
 
-Keep in ind you can always *perform exploratory analysis on a subset of data*, refine your work into a final query, then remove the limitation and run your work accross the entore dataset. The final query might take a long time to run but at least you can run the intermediate steps quickly. You can get a subset of data using *LIMIT* at the end of your query. It's worth noting that LIMIT doesn't quite work the same way with aggregations. The aggregation is oerformed first, then the results are limited to the specified number of rows. So If you're using aggregates LIMIT will do nothing to speed up your query. If you want to LIMIT the dataset before doing the aggregation to speed things up a bit more you'll need to do it in a subquery and keep the LIMIT within the subquery.
+Keep in mind you can always *perform exploratory analysis on a subset of data*, refine your work into a final query, then remove the limitation and run your work accross the entire dataset. The final query might take a long time to run but at least you can run the intermediate steps quickly. You can get a subset of data using *LIMIT* at the end of your query. It's worth noting that LIMIT doesn't quite work the same way with aggregations. The aggregation is performed first, then the results are limited to the specified number of rows. So If you're using aggregates LIMIT will do nothing to speed up your query. If you want to LIMIT the dataset before doing the aggregation to speed things up a bit more you'll need to do it in a subquery and keep the LIMIT within the subquery.
 
 The second thing you can do, is make your joins less complicated, meaning you can *reduce the number of rows that are evaluated during the join*. It's better to reduce table sizes before joining them. You can do this by aggregating the tables before joining them. 
 
-You can add explain at the beginning of any working query to get a sense of how long it will take. You'll get an output called the query plan and it'll show the order in which your query will be executed. You can see the measure of cost listed next to the number of rows. Higher numbers means a longer run time. You can run *EXPLAIN* on a query and then modify the most time expensive steps and then run EXPLAIN again to see if the cost is reduced.
+You can add EXPLAIN at the beginning of any working query to get a sense of how long it will take. You'll get an output called the query plan and it'll show the order in which your query will be executed. You can see the measure of cost listed next to the number of rows. Higher numbers means a longer run time. You can run *EXPLAIN* on a query and then modify the most time expensive steps and then run EXPLAIN again to see if the cost is reduced.
 
 ## JOINing Subqueries
 Sub queries can be especially helpful in improving the performance of your queries. For example, imagine you'd like to see a bunch of metrics for a business on a daily basis. To do this, you'll need to join data from a few tables and then aggregate by day. You could do all of this in one main query:
